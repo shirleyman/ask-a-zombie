@@ -4,6 +4,7 @@
   --eye-left-left: 118px;
   --eye-right-top: 176px;
   --eye-right-left: 200px;
+  --eyeball-drop-duration: 0.5s;
 }
 /* Layout and Reset */
 html, body {
@@ -64,38 +65,50 @@ img {
 }
 .brains-eyeball {
   position: absolute;
-  top: 50%;
+  top:56%;
   left: 50%;
   width: 140px;
   height: 130px;
   transform: translate(-50%, -50%);
   z-index: 10;
+}
+
+@keyframes dropAndBounce {
+  0% {
+    top: -20%;
+    opacity: 0;
+  }
+  60% {
+    top: 62%;
+    opacity: 1;
+  }
+  80% {
+    top: 54%;
+  }
+  100% {
+    top: 58%;
+  }
+}
+
+body:not(.scene-result-active) .brains-eyeball {
   opacity: 0;
   animation: none;
   display: none;
 }
-.brains-eyeball.animated {
-  display: block;
-  animation: eyeball-fall-bounce 1.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
-  opacity: 1;
+
+body.scene-result-active .brains-eyeball {
+  animation: dropAndBounce var(--eyeball-drop-duration) ease-out forwards;
 }
-@keyframes eyeball-fall-bounce {
-  0% {
-    top: -150px;
-    opacity: 1;
-  }
-  70% {
-    top: 50%;
-    opacity: 1;
-  }
-  80% {
-    top: 45%;
-  }
-  90% {
-    top: 52%;
-  }
-  100% {
-    top: 50%;
-    opacity: 1;
-  }
-} 
+
+.scene-result {
+  display: none;
+}
+.scene-initial {
+  display: initial;
+}
+body.scene-result-active .scene-result {
+  display: initial;
+}
+body.scene-result-active .scene-initial {
+  display: none;
+}
