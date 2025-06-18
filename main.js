@@ -320,4 +320,18 @@ document.addEventListener('DOMContentLoaded', function () {
     sceneResultActive = !sceneResultActive;
     updateSceneVisibility();
   });
+
+  // --- Fullscreen and Scaling Logic ---
+  function resize() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+    const { width, height } = container.getBoundingClientRect();
+    const scaleX = window.innerWidth / 320; // 320 is base width
+    const scaleY = window.innerHeight / 480; // 480 is base height
+    const scale = Math.min(scaleX, scaleY);
+    container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  }
+
+  window.addEventListener('resize', resize);
+  resize(); // Initial resize on load
 }); 
