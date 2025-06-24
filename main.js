@@ -203,11 +203,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   function startHandAnimation() {
     if (!handImg) return;
-    if (!handFramesLoaded) {
-      preloadHandFrames(startHandAnimation);
-      return;
-    }
     if (handInterval) clearInterval(handInterval);
+    
     function setFrame(index) {
       const frame1x = handFrames[index];
       const frame2x = handFrames2x[index];
@@ -334,4 +331,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   window.addEventListener('resize', resize);
   resize(); // Initial resize on load
+
+  // Preload both idle and hand frames immediately when page loads
+  Promise.all([
+    new Promise(resolve => preloadIdleFrames(resolve)),
+    new Promise(resolve => preloadHandFrames(resolve)),
+    new Promise(resolve => preloadEyeballOptions(resolve))
+  ]).then(() => {
+    // Start initial idle animation once everything is loaded
+    startZombieIdle();
+  });
 }); 
