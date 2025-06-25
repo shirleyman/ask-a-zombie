@@ -18,40 +18,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   const leftOrigin = getOriginalPosition('left');
   const rightOrigin = getOriginalPosition('right');
-  // Mousemove handler for eyeball tracking
-  function eyeballMouseMove(e) {
-    if (isIdleAnimating) return;
-    const bg = document.getElementById('background-img');
-    if (!bg) return;
-    const rect = bg.getBoundingClientRect();
-    // Mouse position relative to the background image
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    function calcOffset(origin) {
-      const dx = mouseX - centerX;
-      const dy = mouseY - centerY;
-      const sensitivity = 3;
-      const angle = Math.atan2(dy, dx);
-      const dist = Math.min(Math.hypot(dx, dy) * sensitivity, maxOffset);
-      return {
-        top: origin.top + Math.sin(angle) * dist,
-        left: origin.left + Math.cos(angle) * dist,
-      };
-    }
-    if (leftEyeball) {
-      const leftOffset = calcOffset(leftOrigin);
-      leftEyeball.style.top = `${leftOffset.top}px`;
-      leftEyeball.style.left = `${leftOffset.left}px`;
-    }
-    if (rightEyeball) {
-      const rightOffset = calcOffset(rightOrigin);
-      rightEyeball.style.top = `${rightOffset.top}px`;
-      rightEyeball.style.left = `${rightOffset.left}px`;
-    }
-  }
-  document.addEventListener('mousemove', eyeballMouseMove);
 
   // Prevent right-click, context menu, and drag on images
   document.addEventListener('contextmenu', function(e) {
