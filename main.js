@@ -19,29 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const leftOrigin = getOriginalPosition('left');
   const rightOrigin = getOriginalPosition('right');
 
-  // Prevent touch gestures and scrolling
-  document.addEventListener('touchstart', function(e) {
-    if (e.touches.length > 1) e.preventDefault(); // Prevent pinch zoom
-  }, { passive: false });
-
-  document.addEventListener('touchmove', function(e) {
-    e.preventDefault(); // Prevent scrolling
-  }, { passive: false });
-
-  document.addEventListener('touchend', function(e) {
-    e.preventDefault();
-  }, { passive: false });
-
-  // Prevent double-tap zoom
-  let lastTouchEnd = 0;
-  document.addEventListener('touchend', function(e) {
-    const now = Date.now();
-    if (now - lastTouchEnd <= 300) {
-      e.preventDefault();
-    }
-    lastTouchEnd = now;
-  }, { passive: false });
-
   // Prevent right-click, context menu, and drag on images
   document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
