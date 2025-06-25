@@ -291,7 +291,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const { width, height } = container.getBoundingClientRect();
     const scaleX = window.innerWidth / 320; // 320 is base width
     const scaleY = window.innerHeight / 480; // 480 is base height
-    const scale = Math.min(scaleX, scaleY);
+    // Use max scale to fill screen completely
+    const scale = Math.max(scaleX, scaleY);
     container.style.transform = `translate(-50%, -50%) scale(${scale})`;
   }
 
