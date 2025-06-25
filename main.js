@@ -288,16 +288,35 @@ document.addEventListener('DOMContentLoaded', function () {
   function resize() {
     const container = document.querySelector('.container');
     if (!container) return;
-    const { width, height } = container.getBoundingClientRect();
-    const scaleX = window.innerWidth / 320; // 320 is base width
-    const scaleY = window.innerHeight / 480; // 480 is base height
+    
+    // Use visual viewport for more accurate mobile sizing
+    const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    
+    const scaleX = viewportWidth / 320; // 320 is base width
+    const scaleY = viewportHeight / 480; // 480 is base height
     // Use max scale to fill screen completely
     const scale = Math.max(scaleX, scaleY);
     container.style.transform = `translate(-50%, -50%) scale(${scale})`;
   }
 
+  // Handle all possible viewport changes
   window.addEventListener('resize', resize);
-  resize(); // Initial resize on load
+  window.addEventListener('orientationchange', resize);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+    window.visualViewport.addEventListener('scroll', resize);
+  }
+  
+  // Initial resize
+  resize();
+
+  // Force resize after orientation changes and initial load
+  window.addEventListener('load', () => {
+    resize();
+    // Some mobile browsers need a moment to settle
+    setTimeout(resize, 100);
+  });
 
   // Preload both idle and hand frames immediately when page loads
   Promise.all([
