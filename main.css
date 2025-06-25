@@ -13,6 +13,13 @@ html, body {
   padding: 0;
   box-sizing: border-box;
   background: #000;
+  /* Disable scrolling and bouncing effects */
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: none;
+  touch-action: none;
 }
 body {
   width: 100vw;
