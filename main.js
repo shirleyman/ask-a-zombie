@@ -70,6 +70,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+  function isMobileDevice() {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  }
+
   // --- Event Listeners Setup ---
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('mousedown', e => { if (e.button !== 0) e.preventDefault(); });
@@ -335,8 +339,16 @@ document.addEventListener('DOMContentLoaded', function () {
     
     const scaleX = viewportWidth / config.layout.baseWidth;
     const scaleY = viewportHeight / config.layout.baseHeight;
-    // Use max scale to fill screen completely
-    const scale = Math.max(scaleX, scaleY);
+    
+    let scale;
+    if (isMobileDevice()) {
+      // On mobile, fill the screen completely
+      scale = Math.max(scaleX, scaleY);
+    } else {
+      // On desktop, fit to height to avoid being unusable on wide screens
+      scale = scaleY;
+    }
+
     container.style.transform = `translate(-50%, -50%) scale(${scale})`;
   }
 
