@@ -4,6 +4,8 @@ Think of a YES/NO question and tap the slightly decomposed zombie to receive you
 
 ⚠️ Contains cartoon violence.
 
+[Try it here](https://shirleyman.github.io/ask-a-zombie/)
+
 ## Credits
 - 🎨 Beautiful, hand-crafted zombie artwork by the talented [Jake Collinge](https://jakecollinge.com/)
 - 👩‍💻 Zombie code brought to life by me, [Shirley Man](https://shirleyman.com)
