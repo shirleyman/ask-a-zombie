@@ -135,6 +135,72 @@ document.addEventListener('DOMContentLoaded', function () {
     resetEyePositions();
   }
 
+  // --- Stabbing Animation ---
+  const stabbingImg = document.getElementById('zombie-img');
+  const stabbingFrames = [
+    'assets/zombie_stab01.png',
+    'assets/zombie_stab02.png',
+    'assets/zombie_stab03.png',
+    'assets/zombie_stab04.png'
+  ];
+  const stabbingFrames2x = stabbingFrames.map(f => f.replace('.png', '@2x.png'));
+  const allStabbingFramesToLoad = [...stabbingFrames, ...stabbingFrames2x];
+  let stabbingFrameIdx = 0;
+  let stabbingInterval = null;
+  let stabbingFramesLoaded = false;
+  function preloadStabbingFrames(callback) {
+    if (stabbingFramesLoaded) {
+      if (callback) callback();
+      return;
+    }
+    let loaded = 0;
+    allStabbingFramesToLoad.forEach(src => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === allStabbingFramesToLoad.length) {
+          stabbingFramesLoaded = true;
+          if (callback) callback();
+        }
+      };
+      img.src = src;
+    });
+  }
+  function startStabbingAnimation() {
+    if (!stabbingImg) return;
+
+    if (!stabbingFramesLoaded) {
+      preloadStabbingFrames(startStabbingAnimation);
+      return;
+    }
+
+    if (stabbingInterval) clearInterval(stabbingInterval);
+
+    stabbingFrameIdx = 0;
+    const setFrame = (index) => {
+      const frame1x = stabbingFrames[index];
+      const frame2x = stabbingFrames2x[index];
+      stabbingImg.src = frame1x;
+      stabbingImg.srcset = `${frame1x} 1x, ${frame2x} 2x`;
+    };
+
+    setFrame(stabbingFrameIdx); // Show the first frame immediately
+
+    stabbingInterval = setInterval(() => {
+      stabbingFrameIdx++;
+      if (stabbingFrameIdx < stabbingFrames.length) {
+        setFrame(stabbingFrameIdx);
+      } else {
+        clearInterval(stabbingInterval);
+        stabbingInterval = null;
+      }
+    }, zombieAnimationSpeed);
+  }
+  function stopStabbingAnimation() {
+    if (stabbingInterval) clearInterval(stabbingInterval);
+    stabbingInterval = null;
+  }
+
   // --- Hand Animation ---
   const handImg = document.getElementById('hand-img');
   const handFrames = [
@@ -259,21 +325,30 @@ document.addEventListener('DOMContentLoaded', function () {
   let sceneResultActive = false;
   function updateSceneVisibility() {
     if (sceneResultActive) {
-      document.body.classList.add('scene-result-active');
       stopZombieIdle();
-      
-      const rootStyles = getComputedStyle(document.documentElement);
-      const dropDurationStr = rootStyles.getPropertyValue('--eyeball-drop-duration').trim();
-      const dropDurationMs = parseFloat(dropDurationStr) * 505;
+      startStabbingAnimation();
+
+      const animationDuration = stabbingFrames.length * zombieAnimationSpeed;
+      const sceneTransitionDelay = 600;
 
       setTimeout(() => {
-        startHandAnimation();
-      }, dropDurationMs);
+        document.body.classList.add('scene-result-active');
 
-      setRandomEyeballImage();
+        const rootStyles = getComputedStyle(document.documentElement);
+        const dropDurationStr = rootStyles.getPropertyValue('--eyeball-drop-duration').trim();
+        const dropDurationMs = parseFloat(dropDurationStr) * 500;
+
+        setTimeout(() => {
+          startHandAnimation();
+        }, dropDurationMs);
+
+        setRandomEyeballImage();
+      }, animationDuration + sceneTransitionDelay);
+
     } else {
       document.body.classList.remove('scene-result-active');
       startZombieIdle();
+      stopStabbingAnimation();
       stopHandAnimation();
     }
   }
@@ -321,6 +396,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Preload both idle and hand frames immediately when page loads
   Promise.all([
     new Promise(resolve => preloadIdleFrames(resolve)),
+    new Promise(resolve => preloadStabbingFrames(resolve)),
     new Promise(resolve => preloadHandFrames(resolve)),
     new Promise(resolve => preloadEyeballOptions(resolve))
   ]).then(() => {
