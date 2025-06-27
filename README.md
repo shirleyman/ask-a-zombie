@@ -1,6 +1,8 @@
 # Ask A Zombie 🧟‍♂️
 
-The zombie knows it all. Simply think of a YES/NO question and tap the slightly decomposed zombie to receive your answer.
+Think of a YES/NO question and tap the slightly decomposed zombie to receive your answer.
+
+⚠️ Contains cartoon violence.
 
 ## Credits
 - 🎨 Beautiful, hand-crafted zombie artwork by the talented [Jake Collinge](https://jakecollinge.com/)
