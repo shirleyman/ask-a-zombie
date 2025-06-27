@@ -32,6 +32,76 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // --- Animation Player Factory ---
+  function createAnimationPlayer({ img, frames, speed, loop = false, onFrame, onEnd }) {
+    const frames2x = frames.map(f => f.replace('.png', '@2x.png'));
+    const allFramesToLoad = [...frames, ...frames2x];
+    let frameIdx = 0;
+    let interval = null;
+    let framesLoaded = false;
+  
+    function preload(callback) {
+      if (framesLoaded) {
+        if (callback) callback();
+        return;
+      }
+      let loaded = 0;
+      allFramesToLoad.forEach(src => {
+        const image = new Image();
+        image.onload = image.onerror = () => {
+          loaded++;
+          if (loaded === allFramesToLoad.length) {
+            framesLoaded = true;
+            if (callback) callback();
+          }
+        };
+        image.src = src;
+      });
+    }
+  
+    function setFrame(index) {
+      if (!img) return;
+      const frame1x = frames[index];
+      const frame2x = frames2x[index];
+      img.src = frame1x;
+      img.srcset = `${frame1x} 1x, ${frame2x} 2x`;
+      if (onFrame) onFrame(index);
+    }
+  
+    function start() {
+      if (!img) return;
+      if (!framesLoaded) {
+        preload(start);
+        return;
+      }
+      stop(); 
+      frameIdx = 0;
+      setFrame(frameIdx);
+  
+      interval = setInterval(() => {
+        frameIdx++;
+        if (frameIdx < frames.length) {
+          setFrame(frameIdx);
+        } else {
+          if (loop) {
+            frameIdx = 0;
+            setFrame(frameIdx);
+          } else {
+            stop();
+            if (onEnd) onEnd();
+          }
+        }
+      }, speed);
+    }
+  
+    function stop() {
+      if (interval) clearInterval(interval);
+      interval = null;
+    }
+  
+    return { preload, start, stop };
+  }
+
   // --- Zombie Idle Animation ---
   const zombieImg = document.getElementById('zombie-img');
   const idleFrames = [
@@ -105,100 +175,43 @@ document.addEventListener('DOMContentLoaded', function () {
     rightEyeSocket.style.top = `${rightOrigin.top}px`;
     rightEyeSocket.style.left = `${rightOrigin.left}px`;
   }
+  const zombieIdlePlayer = createAnimationPlayer({
+    img: zombieImg,
+    frames: idleFrames,
+    speed: zombieAnimationSpeed,
+    loop: true,
+    onFrame: updateIdleEyePositions
+  });
   function startZombieIdle() {
     isIdleAnimating = true;
-    if (!zombieImg) return;
-    if (!idleFramesLoaded) {
-      preloadIdleFrames(startZombieIdle);
-      return;
-    }
-    if (idleInterval) clearInterval(idleInterval);
-    idleInterval = null;
-    function setFrame(index) {
-      const frame1x = idleFrames[index];
-      const frame2x = idleFrames2x[index];
-      zombieImg.src = frame1x;
-      zombieImg.srcset = `${frame1x} 1x, ${frame2x} 2x`;
-    }
-    idleFrameIdx = 0;
-    setFrame(idleFrameIdx);
-    idleInterval = setInterval(() => {
-      idleFrameIdx = (idleFrameIdx + 1) % idleFrames.length;
-      setFrame(idleFrameIdx);
-      updateIdleEyePositions(idleFrameIdx);
-    }, zombieAnimationSpeed);
+    zombieIdlePlayer.start();
   }
   function stopZombieIdle() {
     isIdleAnimating = false;
-    if (idleInterval) clearInterval(idleInterval);
-    idleInterval = null;
+    zombieIdlePlayer.stop();
     resetEyePositions();
   }
 
   // --- Stabbing Animation ---
-  const stabbingImg = document.getElementById('zombie-img');
   const stabbingFrames = [
     'assets/zombie_stab01.png',
     'assets/zombie_stab02.png',
     'assets/zombie_stab03.png',
     'assets/zombie_stab04.png'
   ];
-  const stabbingFrames2x = stabbingFrames.map(f => f.replace('.png', '@2x.png'));
-  const allStabbingFramesToLoad = [...stabbingFrames, ...stabbingFrames2x];
-  let stabbingFrameIdx = 0;
-  let stabbingInterval = null;
-  let stabbingFramesLoaded = false;
-  function preloadStabbingFrames(callback) {
-    if (stabbingFramesLoaded) {
-      if (callback) callback();
-      return;
-    }
-    let loaded = 0;
-    allStabbingFramesToLoad.forEach(src => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === allStabbingFramesToLoad.length) {
-          stabbingFramesLoaded = true;
-          if (callback) callback();
-        }
-      };
-      img.src = src;
-    });
-  }
+
+  const zombieStabPlayer = createAnimationPlayer({
+    img: zombieImg,
+    frames: stabbingFrames,
+    speed: zombieAnimationSpeed,
+    loop: false
+  });
+
   function startStabbingAnimation() {
-    if (!stabbingImg) return;
-
-    if (!stabbingFramesLoaded) {
-      preloadStabbingFrames(startStabbingAnimation);
-      return;
-    }
-
-    if (stabbingInterval) clearInterval(stabbingInterval);
-
-    stabbingFrameIdx = 0;
-    const setFrame = (index) => {
-      const frame1x = stabbingFrames[index];
-      const frame2x = stabbingFrames2x[index];
-      stabbingImg.src = frame1x;
-      stabbingImg.srcset = `${frame1x} 1x, ${frame2x} 2x`;
-    };
-
-    setFrame(stabbingFrameIdx); // Show the first frame immediately
-
-    stabbingInterval = setInterval(() => {
-      stabbingFrameIdx++;
-      if (stabbingFrameIdx < stabbingFrames.length) {
-        setFrame(stabbingFrameIdx);
-      } else {
-        clearInterval(stabbingInterval);
-        stabbingInterval = null;
-      }
-    }, zombieAnimationSpeed);
+    zombieStabPlayer.start();
   }
   function stopStabbingAnimation() {
-    if (stabbingInterval) clearInterval(stabbingInterval);
-    stabbingInterval = null;
+    zombieStabPlayer.stop();
   }
 
   // --- Hand Animation ---
@@ -233,33 +246,17 @@ document.addEventListener('DOMContentLoaded', function () {
       img.src = src;
     });
   }
+  const handPlayer = createAnimationPlayer({
+    img: handImg,
+    frames: handFrames,
+    speed: handAnimationSpeed,
+    loop: false
+  });
   function startHandAnimation() {
-    if (!handImg) return;
-    if (handInterval) clearInterval(handInterval);
-    
-    function setFrame(index) {
-      const frame1x = handFrames[index];
-      const frame2x = handFrames2x[index];
-      handImg.src = frame1x;
-      handImg.srcset = `${frame1x} 1x, ${frame2x} 2x`;
-    }
-
-    handFrameIdx = 0;
-    setFrame(handFrameIdx);
-
-    handInterval = setInterval(() => {
-      handFrameIdx++;
-      if (handFrameIdx < handFrames.length) {
-        setFrame(handFrameIdx);
-      } else {
-        clearInterval(handInterval);
-        handInterval = null;
-      }
-    }, handAnimationSpeed);
+    handPlayer.start();
   }
   function stopHandAnimation() {
-    if (handInterval) clearInterval(handInterval);
-    handInterval = null;
+    handPlayer.stop();
   }
 
   // --- Random Eyeball Logic ---
@@ -395,9 +392,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Preload both idle and hand frames immediately when page loads
   Promise.all([
-    new Promise(resolve => preloadIdleFrames(resolve)),
-    new Promise(resolve => preloadStabbingFrames(resolve)),
-    new Promise(resolve => preloadHandFrames(resolve)),
+    new Promise(resolve => zombieIdlePlayer.preload(resolve)),
+    new Promise(resolve => zombieStabPlayer.preload(resolve)),
+    new Promise(resolve => handPlayer.preload(resolve)),
     new Promise(resolve => preloadEyeballOptions(resolve))
   ]).then(() => {
     // Start initial idle animation once everything is loaded
