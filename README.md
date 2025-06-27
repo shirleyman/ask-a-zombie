@@ -2,17 +2,9 @@
 
 The zombie knows it all. Simply think of a YES/NO question and tap the slightly decomposed zombie to receive your answer.
 
-## Features
-
-- 🎨 Beautiful, hand-crafted zombie artwork by the talented [Jake Collinge](https://jakecollinge.com/)
-- 📱 Responsive design that works on all devices
-- 🔨 Built with HTML, CSS, and JavaScript
-
-
 ## Credits
-
-- Artwork: [Jake Collinge](https://jakecollinge.com/)
-
+- 🎨 Beautiful, hand-crafted zombie artwork by the talented [Jake Collinge](https://jakecollinge.com/)
+- 👩‍💻 Zombie code brought to life by me, [Shirley Man](https://shirleyman.com)
 
 ## License
 ⚠️ **ARTWORK COPYRIGHT**: All zombie artwork, animations, and visual assets are created by Jake Collinge and are strictly protected by copyright. These may not be used, copied, or distributed without explicit permission.
