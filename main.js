@@ -1,14 +1,64 @@
 // --- Eyeball Tracking Logic ---
 document.addEventListener('DOMContentLoaded', function () {
+  // --- Configuration ---
+  const config = {
+    animations: {
+      zombieSpeed: 100, // ms per frame
+      handSpeed: 50, // ms per frame
+      idleFrames: [
+        'assets/zombie_idle01.png', 'assets/zombie_idle02.png', 'assets/zombie_idle03.png',
+        'assets/zombie_idle04.png', 'assets/zombie_idle05.png', 'assets/zombie_idle06.png',
+        'assets/zombie_idle07.png', 'assets/zombie_idle08.png', 'assets/zombie_idle09.png',
+        'assets/zombie_idle10.png', 'assets/zombie_idle11.png', 'assets/zombie_idle12.png',
+        'assets/zombie_idle13.png', 'assets/zombie_idle14.png',
+      ],
+      stabbingFrames: [
+        'assets/zombie_stab01.png', 'assets/zombie_stab02.png',
+        'assets/zombie_stab03.png', 'assets/zombie_stab04.png'
+      ],
+      handFrames: [
+        'assets/zombie_hand01.png', 'assets/zombie_hand02.png', 'assets/zombie_hand03.png',
+        'assets/zombie_hand04.png', 'assets/zombie_hand05.png',
+      ],
+    },
+    scene: {
+      transitionDelay: 600, // ms
+    },
+    eyeball: {
+      maxOffset: 6, // px for mouse tracking
+      idleLeftOffsetX: -14,
+      idleLeftOffsetY: 12,
+      idleRightOffsetX: -15,
+      idleRightOffsetY: 3,
+      options: [
+        { src: 'assets/eyeball_response_yes.png', probability: 0.495 },
+        { src: 'assets/eyeball_response_no.png', probability: 0.495 },
+        { src: 'assets/eyeball_response_maybe.png', probability: 0.01 },
+      ],
+    },
+    layout: {
+      baseWidth: 320,
+      baseHeight: 480,
+      mobileResizeSettleDelay: 100, // ms
+    },
+  };
+
+  // --- DOM Elements ---
+  const zombieImg = document.getElementById('zombie-img');
+  const handImg = document.getElementById('hand-img');
+  const brainsEyeball = document.getElementById('brains-eyeball');
   const leftEyeball = document.querySelector('.eyeball.left');
   const rightEyeball = document.querySelector('.eyeball.right');
   const leftEyeSocket = document.querySelector('.eye-socket.left');
   const rightEyeSocket = document.querySelector('.eye-socket.right');
-  const maxOffset = 6; // px
+
+  // --- State ---
   let isIdleAnimating = false;
-  // --- Animation Speeds ---
-  const zombieAnimationSpeed = 100; // ms per frame
-  const handAnimationSpeed = 50;   // ms per frame
+  let sceneResultActive = false;
+  const leftOrigin = getOriginalPosition('left');
+  const rightOrigin = getOriginalPosition('right');
+
+  // --- Utility Functions ---
   function getOriginalPosition(side) {
     const root = getComputedStyle(document.documentElement);
     return {
@@ -16,21 +66,34 @@ document.addEventListener('DOMContentLoaded', function () {
       left: parseInt(root.getPropertyValue(`--eye-${side}-left`)),
     };
   }
-  const leftOrigin = getOriginalPosition('left');
-  const rightOrigin = getOriginalPosition('right');
 
-  // Prevent right-click, context menu, and drag on images
-  document.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-  });
-  document.addEventListener('mousedown', function(e) {
-    if (e.button !== 0) e.preventDefault();
-  });
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  // --- Event Listeners Setup ---
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('mousedown', e => { if (e.button !== 0) e.preventDefault(); });
   document.querySelectorAll('img').forEach(img => {
-    img.addEventListener('dragstart', function(e) {
-      e.preventDefault();
-    });
+    img.addEventListener('dragstart', e => e.preventDefault());
   });
+
+  // --- Image Preloader ---
+  function preloadImages(sources, callback) {
+    if (!sources || sources.length === 0) {
+      if (callback) callback();
+      return;
+    }
+    let loaded = 0;
+    sources.forEach(src => {
+      const image = new Image();
+      image.onload = image.onerror = () => {
+        loaded++;
+        if (loaded === sources.length) {
+          if (callback) callback();
+        }
+      };
+      image.src = src;
+    });
+  }
 
   // --- Animation Player Factory ---
   function createAnimationPlayer({ img, frames, speed, loop = false, onFrame, onEnd }) {
@@ -45,17 +108,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (callback) callback();
         return;
       }
-      let loaded = 0;
-      allFramesToLoad.forEach(src => {
-        const image = new Image();
-        image.onload = image.onerror = () => {
-          loaded++;
-          if (loaded === allFramesToLoad.length) {
-            framesLoaded = true;
-            if (callback) callback();
-          }
-        };
-        image.src = src;
+      preloadImages(allFramesToLoad, () => {
+        framesLoaded = true;
+        if (callback) callback();
       });
     }
   
@@ -103,58 +158,17 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // --- Zombie Idle Animation ---
-  const zombieImg = document.getElementById('zombie-img');
-  const idleFrames = [
-    'assets/zombie_idle01.png',
-    'assets/zombie_idle02.png',
-    'assets/zombie_idle03.png',
-    'assets/zombie_idle04.png',
-    'assets/zombie_idle05.png',
-    'assets/zombie_idle06.png',
-    'assets/zombie_idle07.png',
-    'assets/zombie_idle08.png',
-    'assets/zombie_idle09.png',
-    'assets/zombie_idle10.png',
-    'assets/zombie_idle11.png',
-    'assets/zombie_idle12.png',
-    'assets/zombie_idle13.png',
-    'assets/zombie_idle14.png',
-  ];
-  const idleFrames2x = idleFrames.map(f => f.replace('.png', '@2x.png'));
-  const allFramesToLoad = [...idleFrames, ...idleFrames2x];
-  let idleFrameIdx = 0;
-  let idleInterval = null;
-  let idleFramesLoaded = false;
-  function preloadIdleFrames(callback) {
-    let loaded = 0;
-    allFramesToLoad.forEach(src => {
-      const img = new Image();
-      img.onload = () => {
-        loaded++;
-        if (loaded === allFramesToLoad.length) {
-          idleFramesLoaded = true;
-          if (callback) callback();
-        }
-      };
-      img.onerror = () => {
-        loaded++;
-        if (loaded === allFramesToLoad.length) {
-          idleFramesLoaded = true;
-          if (callback) callback();
-        }
-      };
-      img.src = src;
-    });
-  }
+  const idleFrames = config.animations.idleFrames;
+
   function updateIdleEyePositions(frameIndex) {
     if (!leftEyeball || !rightEyeball || !leftEyeSocket || !rightEyeSocket) return;
     const totalFrames = idleFrames.length;
     const progress = (frameIndex / (totalFrames - 1)) * Math.PI;
     const sinProgress = Math.sin(progress);
-    const leftOffsetX = sinProgress * -14;
-    const leftOffsetY = sinProgress * 12;
-    const rightOffsetX = sinProgress * -15;
-    const rightOffsetY = sinProgress * 3;
+    const leftOffsetX = sinProgress * config.eyeball.idleLeftOffsetX;
+    const leftOffsetY = sinProgress * config.eyeball.idleLeftOffsetY;
+    const rightOffsetX = sinProgress * config.eyeball.idleRightOffsetX;
+    const rightOffsetY = sinProgress * config.eyeball.idleRightOffsetY;
     leftEyeball.style.top = `${leftOrigin.top + leftOffsetY}px`;
     leftEyeball.style.left = `${leftOrigin.left + leftOffsetX}px`;
     leftEyeSocket.style.top = `${leftOrigin.top + leftOffsetY}px`;
@@ -178,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const zombieIdlePlayer = createAnimationPlayer({
     img: zombieImg,
     frames: idleFrames,
-    speed: zombieAnimationSpeed,
+    speed: config.animations.zombieSpeed,
     loop: true,
     onFrame: updateIdleEyePositions
   });
@@ -193,17 +207,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // --- Stabbing Animation ---
-  const stabbingFrames = [
-    'assets/zombie_stab01.png',
-    'assets/zombie_stab02.png',
-    'assets/zombie_stab03.png',
-    'assets/zombie_stab04.png'
-  ];
+  const stabbingFrames = config.animations.stabbingFrames;
 
   const zombieStabPlayer = createAnimationPlayer({
     img: zombieImg,
     frames: stabbingFrames,
-    speed: zombieAnimationSpeed,
+    speed: config.animations.zombieSpeed,
     loop: false
   });
 
@@ -215,41 +224,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // --- Hand Animation ---
-  const handImg = document.getElementById('hand-img');
-  const handFrames = [
-    'assets/zombie_hand01.png',
-    'assets/zombie_hand02.png',
-    'assets/zombie_hand03.png',
-    'assets/zombie_hand04.png',
-    'assets/zombie_hand05.png',
-  ];
-  const handFrames2x = handFrames.map(f => f.replace('.png', '@2x.png'));
-  const allHandFramesToLoad = [...handFrames, ...handFrames2x];
-  let handFrameIdx = 0;
-  let handInterval = null;
-  let handFramesLoaded = false;
-  function preloadHandFrames(callback) {
-    if (handFramesLoaded) {
-      if (callback) callback();
-      return;
-    }
-    let loaded = 0;
-    allHandFramesToLoad.forEach(src => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === allHandFramesToLoad.length) {
-          handFramesLoaded = true;
-          if (callback) callback();
-        }
-      };
-      img.src = src;
-    });
-  }
+  const handFrames = config.animations.handFrames;
+
   const handPlayer = createAnimationPlayer({
     img: handImg,
     frames: handFrames,
-    speed: handAnimationSpeed,
+    speed: config.animations.handSpeed,
     loop: false
   });
   function startHandAnimation() {
@@ -260,12 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // --- Random Eyeball Logic ---
-  const brainsEyeball = document.getElementById('brains-eyeball');
-  const eyeballOptions = [
-    { src: 'assets/eyeball_response_yes.png', probability: 0.495 },
-    { src: 'assets/eyeball_response_no.png', probability: 0.495 },
-    { src: 'assets/eyeball_response_maybe.png', probability: 0.01 },
-  ];
+  const eyeballOptions = config.eyeball.options;
   const allEyeballOptionsToLoad = eyeballOptions.flatMap(opt => [
     opt.src,
     opt.src.replace('.png', '@2x.png'),
@@ -277,17 +252,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (callback) callback();
       return;
     }
-    let loaded = 0;
-    allEyeballOptionsToLoad.forEach(src => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (loaded === allEyeballOptionsToLoad.length) {
-          eyeballOptionsLoaded = true;
-          if (callback) callback();
-        }
-      };
-      img.src = src;
+    preloadImages(allEyeballOptionsToLoad, () => {
+      eyeballOptionsLoaded = true;
+      if (callback) callback();
     });
   }
 
@@ -319,28 +286,23 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // --- Scene Toggle Handler ---
-  let sceneResultActive = false;
-  function updateSceneVisibility() {
+  async function updateSceneVisibility() {
     if (sceneResultActive) {
       stopZombieIdle();
       startStabbingAnimation();
 
-      const animationDuration = stabbingFrames.length * zombieAnimationSpeed;
-      const sceneTransitionDelay = 600;
+      const animationDuration = stabbingFrames.length * config.animations.zombieSpeed;
 
-      setTimeout(() => {
-        document.body.classList.add('scene-result-active');
+      await wait(animationDuration + config.scene.transitionDelay);
 
-        const rootStyles = getComputedStyle(document.documentElement);
-        const dropDurationStr = rootStyles.getPropertyValue('--eyeball-drop-duration').trim();
-        const dropDurationMs = parseFloat(dropDurationStr) * 500;
+      document.body.classList.add('scene-result-active');
+      setRandomEyeballImage();
 
-        setTimeout(() => {
-          startHandAnimation();
-        }, dropDurationMs);
-
-        setRandomEyeballImage();
-      }, animationDuration + sceneTransitionDelay);
+      const rootStyles = getComputedStyle(document.documentElement);
+      const dropDurationStr = rootStyles.getPropertyValue('--eyeball-drop-duration').trim();
+      const handDropDurationMs = parseFloat(dropDurationStr) * 450;
+      await wait(handDropDurationMs);
+      startHandAnimation();
 
     } else {
       document.body.classList.remove('scene-result-active');
@@ -365,8 +327,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
     const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     
-    const scaleX = viewportWidth / 320; // 320 is base width
-    const scaleY = viewportHeight / 480; // 480 is base height
+    const scaleX = viewportWidth / config.layout.baseWidth;
+    const scaleY = viewportHeight / config.layout.baseHeight;
     // Use max scale to fill screen completely
     const scale = Math.max(scaleX, scaleY);
     container.style.transform = `translate(-50%, -50%) scale(${scale})`;
@@ -387,10 +349,10 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('load', () => {
     resize();
     // Some mobile browsers need a moment to settle
-    setTimeout(resize, 100);
+    setTimeout(resize, config.layout.mobileResizeSettleDelay);
   });
 
-  // Preload both idle and hand frames immediately when page loads
+  // Preload all assets
   Promise.all([
     new Promise(resolve => zombieIdlePlayer.preload(resolve)),
     new Promise(resolve => zombieStabPlayer.preload(resolve)),
