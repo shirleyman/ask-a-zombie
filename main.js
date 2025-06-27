@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- State ---
   let isIdleAnimating = false;
+  let isTransitioning = false;
   let sceneResultActive = false;
   const leftOrigin = getOriginalPosition('left');
   const rightOrigin = getOriginalPosition('right');
@@ -287,6 +288,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- Scene Toggle Handler ---
   async function updateSceneVisibility() {
+    isTransitioning = true;
+
     if (sceneResultActive) {
       stopZombieIdle();
       startStabbingAnimation();
@@ -310,10 +313,13 @@ document.addEventListener('DOMContentLoaded', function () {
       stopStabbingAnimation();
       stopHandAnimation();
     }
+
+    isTransitioning = false;
   }
   updateSceneVisibility();
   document.addEventListener('click', function(e) {
     if (e.button !== 0) return;
+    if (isTransitioning) return;
     sceneResultActive = !sceneResultActive;
     updateSceneVisibility();
   });
