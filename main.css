@@ -5,6 +5,7 @@
   --eye-right-top: 176px;
   --eye-right-left: 200px;
   --eyeball-drop-duration: 0.5s;
+  --eyeball-fall-start-y: 0px;
 }
 /* Layout and Reset */
 html, body {
@@ -23,6 +24,12 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  opacity: 1; /* Default visible state */
+  transition: opacity 0.5s ease-in-out; /* Smooth transition for visibility */
+}
+
+body.loading {
+  opacity: 0;
 }
 .background-container {
   position: absolute;
@@ -114,6 +121,20 @@ body:not(.scene-result-active) .brains-eyeball {
 
 body.scene-result-active .brains-eyeball {
   animation: dropAndBounce var(--eyeball-drop-duration) ease-out forwards;
+}
+
+.eyeball-popped {
+  z-index: 10; /* Bring to front */
+  position: absolute; /* Allow independent positioning */
+}
+
+@keyframes eyeball-fall {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(100vh - var(--eyeball-fall-start-y))); /* Fall to bottom of viewport */
+  }
 }
 
 .scene-result {

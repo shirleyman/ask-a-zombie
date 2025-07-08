@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', function () {
         'assets/zombie_hand01.png', 'assets/zombie_hand02.png', 'assets/zombie_hand03.png',
         'assets/zombie_hand04.png', 'assets/zombie_hand05.png',
       ],
+      eyeballPopFrame: 3, // Frame index (0-based) when the eyeball pops out
+      eyeballPopDelay: 100, // ms delay after eyeball pops before it falls
     },
     scene: {
       transitionDelay: 600, // ms
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const handImg = document.getElementById('hand-img');
   const brainsEyeball = document.getElementById('brains-eyeball');
   const leftEyeball = document.querySelector('.eyeball.left');
-  const rightEyeball = document.querySelector('.eyeball.right');
+  const rightEyeball = document.getElementById('right-eyeball');
   const leftEyeSocket = document.querySelector('.eye-socket.left');
   const rightEyeSocket = document.querySelector('.eye-socket.right');
 
@@ -218,7 +220,30 @@ document.addEventListener('DOMContentLoaded', function () {
     img: zombieImg,
     frames: stabbingFrames,
     speed: config.animations.zombieSpeed,
-    loop: false
+    loop: false,
+    onFrame: (frameIndex) => {
+      if (frameIndex === config.animations.eyeballPopFrame) { // Frame when the eyeball pops out
+        rightEyeball.classList.add('eyeball-popped');
+        rightEyeSocket.style.opacity = '0'; // Hide the eye socket
+      }
+    },
+    onEnd: async () => {
+      await wait(config.animations.eyeballPopDelay); // Delay after eyeball pop
+      // Eyeball fall animation
+      rightEyeball.style.transition = 'transform 0.5s ease-in';
+      rightEyeball.style.transform = `translateY(${window.innerHeight - rightEyeball.getBoundingClientRect().top}px)`;
+      
+      await wait(500); // Wait for eyeball to fall
+
+      document.body.classList.add('scene-result-active');
+      setRandomEyeballImage();
+
+      const rootStyles = getComputedStyle(document.documentElement);
+      const dropDurationStr = rootStyles.getPropertyValue('--eyeball-drop-duration').trim();
+      const handDropDurationMs = parseFloat(dropDurationStr) * 450;
+      await wait(handDropDurationMs);
+      startHandAnimation();
+    }
   });
 
   function startStabbingAnimation() {
@@ -316,6 +341,11 @@ document.addEventListener('DOMContentLoaded', function () {
       startZombieIdle();
       stopStabbingAnimation();
       stopHandAnimation();
+      // Reset eyeball state
+      rightEyeball.classList.remove('eyeball-popped');
+      rightEyeball.style.transition = '';
+      rightEyeball.style.transform = '';
+      rightEyeSocket.style.opacity = '';
     }
 
     isTransitioning = false;
@@ -379,5 +409,6 @@ document.addEventListener('DOMContentLoaded', function () {
   ]).then(() => {
     // Start initial idle animation once everything is loaded
     startZombieIdle();
+    document.body.classList.remove('loading'); // Remove loading class to show content
   });
 }); 
