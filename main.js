@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
     eyeball: {
       maxOffset: 6, // px for mouse tracking
       idleLeftOffsetX: -14,
-      idleLeftOffsetY: 12,
+      idleLeftOffsetY: 8,
       idleRightOffsetX: -15,
-      idleRightOffsetY: 3,
+      idleRightOffsetY: 5,
       options: [
         { src: 'assets/eyeball_response_yes.png', probability: 0.495 },
         { src: 'assets/eyeball_response_no.png', probability: 0.495 },
