@@ -224,7 +224,6 @@ document.addEventListener('DOMContentLoaded', function () {
     onFrame: (frameIndex) => {
       if (frameIndex === config.animations.eyeballPopFrame) { // Frame when the eyeball pops out
         rightEyeball.classList.add('eyeball-popped');
-        rightEyeSocket.style.opacity = '0'; // Hide the eye socket
       }
     },
     onEnd: async () => {
@@ -345,7 +344,6 @@ document.addEventListener('DOMContentLoaded', function () {
       rightEyeball.classList.remove('eyeball-popped');
       rightEyeball.style.transition = '';
       rightEyeball.style.transform = '';
-      rightEyeSocket.style.opacity = '';
     }
 
     isTransitioning = false;
