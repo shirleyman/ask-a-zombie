@@ -18,4 +18,4 @@ The project's code (excluding artwork) may be used for learning purposes.
 See [license file](/LICENSE) for details.
 
 ---
-*Historial Note: This was initially launched as a free app on both iOS and Android platforms. Unfortunately, it was removed due to copyright infringement issues because the app description included the term "Magic 8 Ball," which was trademarked by Mattel.*
+*Historical Footnote: This was initially launched as a free app on both iOS and Android platforms. Unfortunately, it was removed due to copyright infringement issues because the app description included the term "Magic 8 Ball," which was trademarked by Mattel.*
