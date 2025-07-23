@@ -316,6 +316,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- Scene Toggle Handler ---
   async function updateSceneVisibility() {
+    if (document.body.classList.contains('modal-active')) {
+      return; // Prevent scene visibility updates while modal is active
+    }
+
     isTransitioning = true;
 
     if (sceneResultActive) {
@@ -348,13 +352,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     isTransitioning = false;
   }
-  updateSceneVisibility();
-  document.addEventListener('click', function(e) {
-    if (e.button !== 0) return;
-    if (isTransitioning) return;
-    sceneResultActive = !sceneResultActive;
-    updateSceneVisibility();
-  });
 
   // --- Fullscreen and Scaling Logic ---
   function resize() {
@@ -405,8 +402,58 @@ document.addEventListener('DOMContentLoaded', function () {
     new Promise(resolve => handPlayer.preload(resolve)),
     new Promise(resolve => preloadEyeballOptions(resolve))
   ]).then(() => {
-    // Start initial idle animation once everything is loaded
-    startZombieIdle();
-    document.body.classList.remove('loading'); // Remove loading class to show content
+    // Remove loading class to show content
+    document.body.classList.remove('loading');
+    // Ensure idle animation does not start automatically
+    // Do not call startZombieIdle() here; it will start only after modal is dismissed
   });
-}); 
+
+  // --- Prevent Idle Animation on Page Load ---
+  window.addEventListener('load', () => {
+    document.body.classList.add('modal-active');
+    // Do not start idle animation here; it will start only after the modal is dismissed
+  });
+
+  // --- Modal Dialog Logic ---
+  const modalOverlay = document.getElementById('modal-overlay');
+  const modalDialog = document.getElementById('modal-dialog');
+  const modalButton = document.getElementById('modal-button');
+
+  function closeModal() {
+    document.body.classList.remove('modal-active');
+    startZombieIdle(); // Start idle animation after modal is closed
+  }
+
+  // Close modal on button click
+  modalButton.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent scene transition
+    closeModal();
+  });
+
+  // Close modal on overlay click
+  modalOverlay.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent scene transition
+    closeModal();
+  });
+
+  // Close modal on ESC key press
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+    }
+  });
+
+  // --- Scene Transition Logic ---
+  document.addEventListener('click', function(e) {
+    if (document.body.classList.contains('modal-active')) {
+      closeModal(); // Close modal dialog and start idle animation
+      return; // Prevent scene transition
+    }
+
+    if (e.button !== 0) return;
+    if (isTransitioning) return;
+
+    sceneResultActive = !sceneResultActive;
+    updateSceneVisibility();
+  });
+});
