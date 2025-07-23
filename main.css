@@ -125,7 +125,6 @@ body.scene-result-active .brains-eyeball {
 
 .eyeball-popped {
   z-index: 10; /* Bring to front */
-  position: absolute; /* Allow independent positioning */
 }
 
 @keyframes eyeball-fall {
@@ -137,17 +136,16 @@ body.scene-result-active .brains-eyeball {
   }
 }
 
-.scene-result {
+#scene-result {
   display: none;
 }
-.scene-initial {
-  display: initial;
-}
-body.scene-result-active .scene-result {
-  display: initial;
-}
-body.scene-result-active .scene-initial {
+
+body.scene-result-active #scene-initial {
   display: none;
+}
+
+body.scene-result-active #scene-result {
+  display: block;
 }
 
 /* Modal Dialog Styles */
